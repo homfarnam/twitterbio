@@ -1,3 +1,4 @@
+import { AnimatePresence, motion } from "framer-motion";
 import type { NextPage } from "next";
 import Head from "next/head";
 import Image from "next/image";
@@ -15,20 +16,22 @@ const Home: NextPage = () => {
   const [vibe, setVibe] = useState<VibeType>("Professional");
   const [generatedBios, setGeneratedBios] = useState<String>("");
 
-  const prompt = `Generate 2 ${vibe} twitter biographies with no hashtags and clearly labeled "1." and "2.". ${
+  console.log("Streamed response: ", generatedBios);
+
+  const prompt =
     vibe === "Funny"
-      ? "Make sure there is a joke in there and it's a little ridiculous."
-      : null
-  }
-      Make sure each generated biography is less than 160 characters, has short sentences that are found in Twitter bios, and base them on this context: ${bio}${
-    bio.slice(-1) === "." ? "" : "."
-  }`;
+      ? `Generate 2 funny twitter bios with no hashtags and clearly labeled "1." and "2.". Make sure there is a joke in there and it's a little ridiculous. Make sure each generated bio is at max 20 words and base it on this context: ${bio}${
+          bio.slice(-1) === "." ? "" : "."
+        }`
+      : `Generate 2 ${vibe} twitter bios with no hashtags and clearly labeled "1." and "2.". Make sure each generated bio is at least 14 words and at max 20 words and base them on this context: ${bio}${
+          bio.slice(-1) === "." ? "" : "."
+        }`;
 
   const generateBio = async (e: any) => {
     e.preventDefault();
     setGeneratedBios("");
     setLoading(true);
-    const response = await fetch("/api/audio/", {
+    const response = await fetch("/api/generate", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -37,6 +40,7 @@ const Home: NextPage = () => {
         prompt,
       }),
     });
+    console.log("Edge function returned.");
 
     if (!response.ok) {
       throw new Error(response.statusText);
@@ -58,6 +62,7 @@ const Home: NextPage = () => {
       const chunkValue = decoder.decode(value);
       setGeneratedBios((prev) => prev + chunkValue);
     }
+
     setLoading(false);
   };
 
@@ -68,7 +73,7 @@ const Home: NextPage = () => {
   return (
     <div className="flex max-w-5xl mx-auto flex-col items-center justify-center py-2 min-h-screen">
       <Head>
-        <title>Twitter Bio Generator</title>
+        <title>Twitter Generator</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
@@ -83,10 +88,10 @@ const Home: NextPage = () => {
           <Github />
           <p>Star on GitHub</p>
         </a>
-        <h1 className="sm:text-6xl text-4xl max-w-[708px] font-bold text-slate-900">
-          Generate your next Twitter bio using chatGPT
+        <h1 className="sm:text-6xl text-4xl max-w-2xl font-bold text-slate-900">
+          Generate your next Twitter bio in seconds
         </h1>
-        <p className="text-slate-500 mt-5">47,118 bios generated so far.</p>
+        <p className="text-slate-500 mt-5">18,167 bios generated so far.</p>
         <div className="max-w-xl w-full">
           <div className="flex mt-10 items-center space-x-3">
             <Image
@@ -144,38 +149,40 @@ const Home: NextPage = () => {
           toastOptions={{ duration: 2000 }}
         />
         <hr className="h-px bg-gray-700 border-1 dark:bg-gray-700" />
-        <div className="space-y-10 my-10">
-          {generatedBios && (
-            <>
-              <div>
-                <h2 className="sm:text-4xl text-3xl font-bold text-slate-900 mx-auto">
-                  Your generated bios
-                </h2>
-              </div>
-              <div className="space-y-8 flex flex-col items-center justify-center max-w-xl mx-auto">
-                {generatedBios
-                  .substring(generatedBios.indexOf("1") + 3)
-                  .split("2.")
-                  .map((generatedBio) => {
-                    return (
-                      <div
-                        className="bg-white rounded-xl shadow-md p-4 hover:bg-gray-100 transition cursor-copy border"
-                        onClick={() => {
-                          navigator.clipboard.writeText(generatedBio);
-                          toast("Bio copied to clipboard", {
-                            icon: "✂️",
-                          });
-                        }}
-                        key={generatedBio}
-                      >
-                        <p>{generatedBio}</p>
-                      </div>
-                    );
-                  })}
-              </div>
-            </>
-          )}
-        </div>
+        <AnimatePresence mode="wait">
+          <motion.div className="space-y-10 my-10">
+            {generatedBios && (
+              <>
+                <div>
+                  <h2 className="sm:text-4xl text-3xl font-bold text-slate-900 mx-auto">
+                    Your generated bios
+                  </h2>
+                </div>
+                <div className="space-y-8 flex flex-col items-center justify-center max-w-xl mx-auto">
+                  {generatedBios
+                    .substring(generatedBios.indexOf("1") + 3)
+                    .split("2.")
+                    .map((generatedBio) => {
+                      return (
+                        <div
+                          className="bg-white rounded-xl shadow-md p-4 hover:bg-gray-100 transition cursor-copy border"
+                          onClick={() => {
+                            navigator.clipboard.writeText(generatedBio);
+                            toast("Bio copied to clipboard", {
+                              icon: "✂️",
+                            });
+                          }}
+                          key={generatedBio}
+                        >
+                          <p>{generatedBio}</p>
+                        </div>
+                      );
+                    })}
+                </div>
+              </>
+            )}
+          </motion.div>
+        </AnimatePresence>
       </main>
       <Footer />
     </div>

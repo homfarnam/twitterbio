@@ -4,6 +4,8 @@ import Head from "next/head";
 import Header from "../components/Header";
 import Github from "../components/GitHub";
 import Footer from "../components/Footer";
+import { toast } from "react-hot-toast";
+import LoadingDots from "../components/LoadingDots";
 
 interface AudioProps {}
 
@@ -11,89 +13,53 @@ const Audio = ({}: AudioProps) => {
   const [audioFile, setAudioFile] = useState<string | ArrayBuffer | any>(null);
   const [formData, setFormData] = useState<FormData | null>(null);
   const [formDataHeaders, setFormDataHeaders] = useState<any>();
+  const [loading, setLoading] = useState(false);
 
-  // const handleFile = (e: ChangeEvent<HTMLInputElement>) => {
-  //   if (e.target.files && e.target.files[0]) {
-  //     const file = e.target.files[0];
-  //     setAudioFile(file);
+  const [convertedText, setConvertedText] = useState<string>("");
 
-  //     const data = new FormData();
-  //     data.append("file", file);
-  //     data.append("model", "whisper-1");
-  //     data.append("language", "en");
-  //     console.log({ data });
-  //     setFormData(data);
-  //   }
-  // };
-
-  const handleFile = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleFile = async (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setAudioFile(file);
 
-      const reader = new FileReader();
-      reader.onload = () => {
-        const audioData = reader.result;
-        setAudioFile(audioData);
+      const data = new FormData();
+      data.append("file", file);
+      data.append("model", "whisper-1");
+      data.append("language", "en");
+      data.append("temperature", "1");
+      console.log({ data });
+      setFormData(data);
 
-        const contentLength =
-          audioData instanceof ArrayBuffer
-            ? audioData.byteLength.toString()
-            : audioData?.length.toString() ?? "0";
-
-        setFormDataHeaders({
-          "Content-Length": contentLength,
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${
-            process.env.NEXT_PUBLIC_OPENAI_API_KEY ?? ""
-          }`,
-        });
-      };
-      reader.readAsBinaryString(file);
+      // check if the file is an audio file and the size is less than 25MB
+      if (!file.type.match("audio.*") || file.size > 25 * 1024 * 1024) {
+        toast.error("Please upload an audio file less than 25MB");
+        return;
+      }
     }
   };
 
   const sendAudio = async () => {
-    const payload = {
-      model: "whisper-1",
-      file: formData?.get("file"),
-      language: "en",
-    };
+    setLoading(true);
+    const res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+      headers: {
+        Authorization: `Bearer ${process.env.NEXT_PUBLIC_OPENAI_API_KEY ?? ""}`,
+      },
+      method: "POST",
+      body: formData,
+    });
 
-    // const res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
-    //   headers: {
-    //     "Content-Type": "multipart/form-data",
-    //     Authorization: `Bearer ${process.env.NEXT_PUBLIC_OPENAI_API_KEY ?? ""}`,
-    //   },
+    const data = await res.json();
+    setLoading(false);
+
+    // const response = await fetch("/api/new", {
     //   method: "POST",
+
     //   body: formData,
     // });
 
-    const res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
-      headers: formDataHeaders,
-      method: "POST",
-      body: audioFile,
-    });
+    setConvertedText(data.text);
 
-    // send these to the backend api, /api/audio
-    // const response = await fetch("/api/new", {
-    //   method: "POST",
-    //   headers: {
-    //     "Content-Type": "application/json",
-    //   },
-    //   body: JSON.stringify(payload),
-    // });
-
-    // if (!response.ok) {
-    //   throw new Error(response.statusText);
-    // }
-
-    const data = res.body;
-    if (!data) {
-      return;
-    }
-
-    console.log({ res });
+    console.log({ data });
   };
 
   useEffect(() => {
@@ -132,12 +98,12 @@ const Audio = ({}: AudioProps) => {
             accept="audio/*"
           />
 
-          <button
+          {/* <button
             className="bg-black rounded-xl text-white font-medium px-4 py-2 sm:mt-10 mt-8 hover:bg-black/80 w-full"
             onClick={sendAudio}
           >
             Send Audio &rarr;
-          </button>
+          </button> */}
 
           {/* <div className="flex mb-5 items-center space-x-3">
             <Image src="/2-black.png" width={30} height={30} alt="1 icon" />
@@ -147,12 +113,12 @@ const Audio = ({}: AudioProps) => {
             <DropDown vibe={vibe} setVibe={(newVibe) => setVibe(newVibe)} />
           </div> */}
 
-          {/* {!loading && (
+          {!loading && (
             <button
               className="bg-black rounded-xl text-white font-medium px-4 py-2 sm:mt-10 mt-8 hover:bg-black/80 w-full"
-              onClick={(e) => generateBio(e)}
+              onClick={sendAudio}
             >
-              Generate your bio &rarr;
+              Send Audio &rarr;
             </button>
           )}
           {loading && (
@@ -162,43 +128,36 @@ const Audio = ({}: AudioProps) => {
             >
               <LoadingDots color="white" style="large" />
             </button>
-          )} */}
+          )}
         </div>
 
         <hr className="h-px bg-gray-700 border-1 dark:bg-gray-700" />
 
         <AnimatePresence mode="wait">
           <motion.div className="space-y-10 my-10">
-            {/* {generatedBios && (
-                <>
-                  <div>
-                    <h2 className="sm:text-4xl text-3xl font-bold text-slate-900 mx-auto">
-                      Your generated bios
-                    </h2>
+            {convertedText && (
+              <>
+                <div>
+                  <h2 className="sm:text-4xl text-3xl font-bold text-slate-900 mx-auto">
+                    Your generated bios
+                  </h2>
+                </div>
+                <div className="space-y-8 flex flex-col items-center justify-center max-w-xl mx-auto">
+                  <div
+                    className="bg-white rounded-xl shadow-md p-4 hover:bg-gray-100 transition cursor-copy border"
+                    onClick={() => {
+                      navigator.clipboard.writeText(convertedText);
+                      toast("Bio copied to clipboard", {
+                        icon: "✂️",
+                      });
+                    }}
+                    key={convertedText}
+                  >
+                    <p>{convertedText}</p>
                   </div>
-                  <div className="space-y-8 flex flex-col items-center justify-center max-w-xl mx-auto">
-                    {generatedBios
-                      .substring(generatedBios.indexOf("1") + 3)
-                      .split("2.")
-                      .map((generatedBio) => {
-                        return (
-                          <div
-                            className="bg-white rounded-xl shadow-md p-4 hover:bg-gray-100 transition cursor-copy border"
-                            onClick={() => {
-                              navigator.clipboard.writeText(generatedBio);
-                              toast("Bio copied to clipboard", {
-                                icon: "✂️",
-                              });
-                            }}
-                            key={generatedBio}
-                          >
-                            <p>{generatedBio}</p>
-                          </div>
-                        );
-                      })}
-                  </div>
-                </>
-              )} */}
+                </div>
+              </>
+            )}
           </motion.div>
         </AnimatePresence>
       </main>
