@@ -1,5 +1,4 @@
 import React, { ChangeEvent, useCallback, useEffect, useState } from "react";
-import ResizablePanel from "../components/ResizablePanel";
 import { AnimatePresence, motion } from "framer-motion";
 import Head from "next/head";
 import Header from "../components/Header";
@@ -167,10 +166,10 @@ const Audio = ({}: AudioProps) => {
         </div>
 
         <hr className="h-px bg-gray-700 border-1 dark:bg-gray-700" />
-        <ResizablePanel>
-          <AnimatePresence mode="wait">
-            <motion.div className="space-y-10 my-10">
-              {/* {generatedBios && (
+
+        <AnimatePresence mode="wait">
+          <motion.div className="space-y-10 my-10">
+            {/* {generatedBios && (
                 <>
                   <div>
                     <h2 className="sm:text-4xl text-3xl font-bold text-slate-900 mx-auto">
@@ -200,9 +199,8 @@ const Audio = ({}: AudioProps) => {
                   </div>
                 </>
               )} */}
-            </motion.div>
-          </AnimatePresence>
-        </ResizablePanel>
+          </motion.div>
+        </AnimatePresence>
       </main>
       <Footer />
     </div>
