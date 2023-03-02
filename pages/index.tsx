@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import type { NextPage } from "next";
 import Head from "next/head";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Toaster, toast } from "react-hot-toast";
 import DropDown, { VibeType } from "../components/DropDown";
 import Footer from "../components/Footer";
@@ -32,7 +32,7 @@ const Home: NextPage = () => {
     e.preventDefault();
     setGeneratedBios("");
     setLoading(true);
-    const response = await fetch("/api/generate", {
+    const response = await fetch("/api/audio/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -58,7 +58,7 @@ const Home: NextPage = () => {
     let done = false;
 
     while (!done) {
-      const { value, done: doneReading } = await reader.read();
+      const { done: doneReading, value } = await reader.read();
       done = doneReading;
       const chunkValue = decoder.decode(value);
       setGeneratedBios((prev) => prev + chunkValue);
@@ -66,6 +66,10 @@ const Home: NextPage = () => {
 
     setLoading(false);
   };
+
+  useEffect(() => {
+    console.log({ generatedBios });
+  }, [generatedBios]);
 
   return (
     <div className="flex max-w-5xl mx-auto flex-col items-center justify-center py-2 min-h-screen">
