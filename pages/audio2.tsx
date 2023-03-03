@@ -69,10 +69,15 @@ const Audio = ({}: AudioProps) => {
 
   const sendAudio = async () => {
     setLoading(true);
-    const res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
-      headers: {
-        Authorization: `Bearer ${process.env.NEXT_PUBLIC_OPENAI_API_KEY ?? ""}`,
-      },
+    // const res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+    //   headers: {
+    //     Authorization: `Bearer ${process.env.NEXT_PUBLIC_OPENAI_API_KEY ?? ""}`,
+    //   },
+    //   method: "POST",
+    //   body: formData,
+    // });
+
+    const res = await fetch("/api/new", {
       method: "POST",
       body: formData,
     });
